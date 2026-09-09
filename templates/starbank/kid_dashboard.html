@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+{% block title %}Kid Dashboard · Little Starts Bank{% endblock %}
+{% block content %}
+<div class="stack" style="padding: 1.5rem 0 2.5rem;">
+  <div class="panel panel-play">
+    <div class="top-control-bar">
+      <form method="get" class="form-grid">
+        <input type="hidden" name="month" value="{{ report_month_value }}">
+        <input type="hidden" name="day" value="{{ report_selected_day_value }}">
+        <input type="hidden" name="tab" value="{{ request.GET.tab|default:'home' }}">
+        <input type="hidden" name="report" value="{{ request.GET.report|default:'daily' }}">
+        <label>Choose a kid
+          <select name="kid" onchange="this.form.submit()">
+            {% for kid in kids %}
+              <option value="{{ kid.id }}" {% if kid.id == selected_kid.id %}selected{% endif %}>{{ kid.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </form>
+      <div class="nav-actions">
+        <span class="pill"><strong>Balance:</strong> ${{ balance.available_balance }}</span>
+        <span class="pill"><strong>Total earned:</strong> ${{ balance.total_earned }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel panel-soft">
+    <div class="tab-strip" id="kid-tabs">
+      <button type="button" class="tab-btn is-active" data-tab="home">Home</button>
+      <button type="button" class="tab-btn" data-tab="reports">Reports</button>
+    </div>
+  </div>
+
+  <section class="stack">
+    <div class="tab-panel is-active" data-panel="home">
+    <div class="hero-card kid-hero">
+      <h1 class="page-title">Welcome, {{ selected_kid.name }}! 🎉</h1>
+      <p class="muted">See your stars, today’s tasks, goals, and requests in one happy dashboard.</p>
+      <div class="feature-chip-row">
+        <span class="feature-chip">⭐ Keep earning</span>
+        <span class="feature-chip">🎁 Rewards get closer every day</span>
+      </div>
+      <div class="stat-grid" style="margin-top: 1rem;">
+        <div class="stat-card stat-card--sunny"><div class="stat-label">Today's Stars</div><div class="stat-value">{{ today_stars }}/{{ daily_limit }}</div></div>
+        <div class="stat-card stat-card--mint"><div class="stat-label">Lifetime Stars</div><div class="stat-value">{{ total_stars }}</div></div>
+        <div class="stat-card stat-card--lavender"><div class="stat-label">Savings Goals</div><div class="stat-value">{{ goals|length }}</div></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel panel-play">
+        <h2 class="section-title">Completed today</h2>
+        <div class="task-list">
+          {% for task in completed_today %}
+            <div class="task-item"><div class="row-between"><strong>{{ task.name }}</strong><span class="badge badge-success">{{ task.stars }} ⭐</span></div></div>
+          {% empty %}
+            <div class="task-item"><span class="muted">No stars yet today — you’ve got this!</span></div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="panel panel-play">
+        <h2 class="section-title">Still to do</h2>
+        <div class="task-list">
+          {% for task in pending_today %}
+            <div class="task-item"><div class="row-between"><strong>{{ task.name }}</strong><span class="badge">{{ task.stars }} ⭐</span></div></div>
+          {% empty %}
+            <div class="task-item"><span class="muted">All tasks are complete — amazing work!</span></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel panel-soft">
+        <h2 class="section-title">Request a withdrawal</h2>
+        <form method="post" action="{% url 'starbank:request-withdrawal' %}" class="form-grid">
+          {% csrf_token %}
+          <input type="hidden" name="kid" value="{{ selected_kid.id }}">
+          {% for field in withdrawal_form %}<label>{{ field.label }}{{ field }}</label>{% endfor %}
+          <button class="btn btn-primary" type="submit">Send request</button>
+        </form>
+        <p class="muted" style="margin: 0;">Request amount must be within your available balance.</p>
+      </div>
+      <div class="panel panel-soft">
+        <h2 class="section-title">Savings goals</h2>
+        <div class="goal-list">
+          {% for goal in goals %}
+            <div class="goal-item">
+              <div class="row-between"><strong>{{ goal.image_emoji }} {{ goal.name }}</strong><span class="badge badge-info">${{ goal.current_amount }} / ${{ goal.target_amount }}</span></div>
+              {% widthratio goal.current_amount goal.target_amount 100 as progress %}
+              <div class="progress-bar"><div class="progress-fill" style="width: {{ progress }}%;"></div></div>
+            </div>
+          {% empty %}
+            <div class="goal-item"><span class="muted">No goals yet — ask a parent to add one.</span></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-soft">
+      <div class="row-between">
+        <h2 class="section-title">My withdrawal requests</h2>
+        <span class="muted">Status + timestamp</span>
+      </div>
+      <div class="request-list">
+        {% for request in withdrawal_requests %}
+          <div class="request-item">
+            <div class="row-between">
+              <strong>${{ request.amount }} · {{ request.get_category_display }}</strong>
+              {% if request.status == 'approved' %}
+                <span class="badge badge-success">Approved</span>
+              {% elif request.status == 'rejected' %}
+                <span class="badge badge-danger">Rejected</span>
+              {% else %}
+                <span class="badge">Pending</span>
+              {% endif %}
+            </div>
+            <p class="muted" style="margin: 0;">{{ request.description }}</p>
+            <span class="muted">Requested on {{ request.created_at|date:'M j, g:i a' }}</span>
+          </div>
+        {% empty %}
+          <div class="request-item"><span class="muted">No withdrawal requests yet.</span></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel panel-soft">
+      <h2 class="section-title">Recent history</h2>
+      <div class="timeline">
+        {% for task in history %}
+          <div class="timeline-item">
+            <div class="row-between">
+              <strong>{{ task.name }}</strong>
+              <span class="badge {% if task.completed_at %}badge-success{% endif %}">{{ task.date }}</span>
+            </div>
+            <span class="muted">{{ task.stars }} ⭐ {% if task.completed_at %}earned{% else %}available{% endif %}</span>
+          </div>
+        {% empty %}
+          <div class="timeline-item"><span class="muted">History will appear once tasks are created.</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    </div>
+
+    <div class="tab-panel" data-panel="reports">
+      <div class="hero-card kid-hero">
+        <h1 class="page-title">Reports for {{ selected_kid.name }}</h1>
+        <p class="muted">Pick your favorite report view and explore your star journey.</p>
+        <div class="feature-chip-row">
+          <span class="feature-chip">🔥 {{ current_streak }} day streak</span>
+          <span class="feature-chip">⭐ {{ weekly_total }} this week</span>
+          <span class="feature-chip">🗓️ {{ monthly_total }} in {{ report_month_label }}</span>
+         </div>
+        <div class="stat-grid" style="margin-top: 1rem;">
+          <div class="stat-card stat-card--sunny"><div class="stat-label">Weekly average</div><div class="stat-value">{{ weekly_average }}</div></div>
+          <div class="stat-card stat-card--mint"><div class="stat-label">Active month days</div><div class="stat-value">{{ active_days_this_month }}</div></div>
+          <div class="stat-card stat-card--lavender"><div class="stat-label">Best 14-day streak</div><div class="stat-value">{{ best_recent_streak }}</div></div>
+        </div>
+       </div>
+
+      <div class="panel panel-soft">
+        <div class="tab-strip" id="kid-report-tabs">
+          <button type="button" class="tab-btn is-active" data-kid-report-tab="daily">Daily report</button>
+          <button type="button" class="tab-btn" data-kid-report-tab="weekly">Weekly report</button>
+          <button type="button" class="tab-btn" data-kid-report-tab="monthly">Monthly overview</button>
+         </div>
+      </div>
+
+      <div class="tab-panel is-active" data-kid-report-panel="daily">
+        <div class="panel panel-play">
+          <h2 class="section-title">Last 14 days</h2>
+          <div class="report-list">
+            {% for entry in daily_entries %}
+              <div class="report-card">
+                <div class="row-between">
+                  <strong>{% if entry.is_today %}Today{% else %}{{ entry.date|date:'D, M j' }}{% endif %}</strong>
+                  <span class="badge">{{ entry.stars }} ⭐</span>
+                </div>
+                <div class="report-card-meta"><span>{{ entry.mood_emoji }} {{ entry.mood_text }}</span></div>
+                <div class="progress-bar"><div class="progress-fill" style="width: {{ entry.progress }}%;"></div></div>
+              </div>
+            {% endfor %}
+           </div>
+         </div>
+       </div>
+
+      <div class="tab-panel" data-kid-report-panel="weekly">
+        <div class="panel panel-soft">
+          <h2 class="section-title">Weekly report</h2>
+          <div class="report-list">
+            {% for entry in weekly_entries %}
+              <div class="report-card">
+                <div class="row-between">
+                  <strong>{% if entry.is_today %}Today ({{ entry.date|date:'D, M j' }}){% else %}{{ entry.date|date:'D, M j' }}{% endif %}</strong>
+                  <span class="badge badge-info">{{ entry.stars }} ⭐</span>
+                </div>
+                <div class="report-card-meta"><span>{{ entry.mood_emoji }} {{ entry.mood_text }}</span></div>
+                <div class="progress-bar"><div class="progress-fill" style="width: {{ entry.progress }}%;"></div></div>
+              </div>
+            {% endfor %}
+          </div>
+          {% if best_week_day %}
+            <div class="kid-callout" style="margin-top: 1rem;">🏆 Best day: <strong>{{ best_week_day.date|date:'D, M j' }}</strong> with <strong>{{ best_week_day.stars }} ⭐</strong></div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="tab-panel" data-kid-report-panel="monthly">
+        <div class="panel panel-soft">
+          <div class="row-between" style="gap: 1rem;">
+            <h2 class="section-title">Monthly overview: {{ report_month_label }}</h2>
+            <form method="get" class="month-nav-form">
+              <input type="hidden" name="kid" value="{{ selected_kid.id }}">
+              <input type="hidden" name="tab" value="reports">
+              <input type="hidden" name="report" value="monthly">
+              <input type="hidden" name="day" value="{{ report_selected_day_value }}">
+              <button class="btn btn-outline" type="submit" name="month" value="{{ report_prev_month_value }}">← Prev</button>
+              <label class="sr-only" for="kid-report-month">Select month</label>
+              <input id="kid-report-month" type="month" name="month" value="{{ report_month_value }}">
+              <button class="btn btn-primary" type="submit">Go</button>
+              <button class="btn btn-outline" type="submit" name="month" value="{{ report_next_month_value }}">Next →</button>
+            </form>
+          </div>
+
+          <div class="tab-strip month-mode-toggle" data-month-mode-toggle="kid" style="margin-top: 0.9rem;">
+            <button type="button" class="tab-btn is-active" data-month-mode="calendar">Calendar mode</button>
+            <button type="button" class="tab-btn" data-month-mode="list">List mode</button>
+          </div>
+
+          <div class="month-mode-panel is-active" data-month-mode-panel="calendar">
+            <div class="report-weekdays" style="margin-top: 1rem;">
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+            <div class="report-calendar">
+              {% for week in calendar_weeks %}
+                {% for entry in week %}
+                  {% if entry %}
+                    <a
+                      class="report-day {{ entry.tone_class }} {% if entry.is_selected %}report-day--selected{% endif %}"
+                      href="?kid={{ selected_kid.id }}&month={{ report_month_value }}&day={{ entry.date|date:'Y-m-d' }}&tab=reports&report=monthly"
+                      title="{{ entry.date|date:'M j, Y' }} · {{ entry.stars }} stars"
+                    >
+                      <span class="report-day-number">{{ entry.day }}</span>
+                      <strong>{{ entry.stars }}⭐</strong>
+                      <small>{{ entry.task_count }} task{% if entry.task_count != 1 %}s{% endif %}</small>
+                    </a>
+                  {% else %}
+                    <div class="report-day report-day--empty" aria-hidden="true"></div>
+                  {% endif %}
+                {% endfor %}
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="month-mode-panel" data-month-mode-panel="list">
+            <div class="report-mini-list" style="margin-top: 1rem;">
+              {% for entry in monthly_entries %}
+                <a class="report-mini-item" href="?kid={{ selected_kid.id }}&month={{ report_month_value }}&day={{ entry.date|date:'Y-m-d' }}&tab=reports&report=monthly">
+                  <strong>{{ entry.date|date:'D, M j' }}</strong>
+                  <span class="muted">{{ entry.task_count }} task{% if entry.task_count != 1 %}s{% endif %}</span>
+                  <span class="badge">{{ entry.stars }} ⭐ ({{ entry.earned }} - {{ entry.deducted }})</span>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="report-legend">
+            <span class="badge report-day--none">0</span>
+            <span class="badge report-day--low">1-3</span>
+            <span class="badge report-day--mid">4-6</span>
+            <span class="badge report-day--high">7+</span>
+          </div>
+
+          <div class="grid-2" style="margin-top: 1rem;">
+            <div class="panel panel-play">
+              <h3 class="section-title" style="font-size:1rem;">Week-by-week stars</h3>
+              <div class="report-mini-list">
+                {% for row in month_week_rows %}
+                  <div class="report-mini-item report-mini-item--stack">
+                    <div class="row-between"><strong>{{ row.label }}</strong><span class="badge badge-info">{{ row.total }} ⭐</span></div>
+                    <div class="tiny-bar"><div class="tiny-bar-fill" style="width: {{ row.progress }}%;"></div></div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="panel panel-play">
+              <h3 class="section-title" style="font-size:1rem;">Compare months</h3>
+              <div class="feature-chip-row" style="margin-top: 0.2rem;">
+                <span class="feature-chip">{{ report_month_label }}: {{ monthly_total }} ⭐</span>
+                <span class="feature-chip">{{ previous_month_label }}: {{ previous_month_total }} ⭐</span>
+              </div>
+              <p class="muted" style="margin-top: 0.7rem;">
+                Change:
+                {% if month_delta >= 0 %}
+                  <strong style="color:#15803d;">+{{ month_delta }} ⭐ ({{ month_delta_percent }}%)</strong>
+                {% else %}
+                  <strong style="color:#b91c1c;">{{ month_delta }} ⭐ ({{ month_delta_percent }}%)</strong>
+                {% endif %}
+              </p>
+            </div>
+          </div>
+
+          {% if best_month_day %}
+            <div class="kid-callout" style="margin-top: 1rem;">🌟 Best day in {{ report_month_label }}: <strong>{{ best_month_day.date|date:'M j' }}</strong> with <strong>{{ best_month_day.stars }} ⭐</strong></div>
+          {% endif %}
+
+          <div class="panel" style="margin-top: 1rem;">
+            <h3 class="section-title" style="margin-bottom: 0.5rem;">Selected day details: {{ selected_day_summary.date|date:'D, M j, Y' }}</h3>
+            <div class="feature-chip-row" style="margin-top: 0.25rem;">
+              <span class="feature-chip">⭐ Net stars: {{ selected_day_summary.stars }}</span>
+              <span class="feature-chip">➕ Earned: {{ selected_day_summary.earned }}</span>
+              <span class="feature-chip">➖ Deductions: {{ selected_day_summary.deducted }}</span>
+              <span class="feature-chip">✅ Completed tasks: {{ selected_day_summary.task_count }}</span>
+            </div>
+
+            <div class="report-stars-row" aria-label="Stars earned this day">
+              {% for _ in selected_day_star_icons %}
+                <span>⭐</span>
+              {% endfor %}
+              {% if selected_day_extra_stars %}
+                <span class="badge badge-info">+{{ selected_day_extra_stars }}</span>
+              {% endif %}
+            </div>
+
+            <div class="grid-2" style="margin-top: 0.8rem;">
+              <div>
+                <h4 class="section-title" style="font-size:1rem;">Completed tasks</h4>
+                <div class="report-mini-list">
+                  {% for task in selected_day_tasks %}
+                    <div class="report-mini-item"><strong>{{ task.name }}</strong><span class="badge">{{ task.stars }} ⭐</span></div>
+                  {% empty %}
+                    <div class="report-mini-item"><span class="muted">No completed tasks on this day.</span></div>
+                  {% endfor %}
+                </div>
+              </div>
+              <div>
+                <h4 class="section-title" style="font-size:1rem;">Adjustments</h4>
+                <div class="report-mini-list">
+                  {% for adjustment in selected_day_adjustments %}
+                    <div class="report-mini-item"><strong>-{{ adjustment.stars }} ⭐</strong><span class="muted">{{ adjustment.reason }}</span></div>
+                  {% empty %}
+                    <div class="report-mini-item"><span class="muted">No star deductions on this day.</span></div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+         </div>
+       </div>
+     </div>
+   </section>
+ </div>
+
+<script>
+  (function () {
+    var tabsRoot = document.getElementById('kid-tabs');
+    if (!tabsRoot) {
+      return;
+    }
+
+    var buttons = tabsRoot.querySelectorAll('[data-tab]');
+    var panels = document.querySelectorAll('[data-panel]');
+
+    function activate(tabName) {
+      buttons.forEach(function (btn) {
+        btn.classList.toggle('is-active', btn.getAttribute('data-tab') === tabName);
+      });
+      panels.forEach(function (panel) {
+        panel.classList.toggle('is-active', panel.getAttribute('data-panel') === tabName);
+      });
+    }
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activate(btn.getAttribute('data-tab'));
+      });
+    });
+
+    var params = new URLSearchParams(window.location.search);
+    var initialTab = params.get('tab');
+    if (initialTab === 'reports') {
+      activate('reports');
+    }
+
+    var reportTabsRoot = document.getElementById('kid-report-tabs');
+    if (!reportTabsRoot) {
+      return;
+    }
+
+    var reportButtons = reportTabsRoot.querySelectorAll('[data-kid-report-tab]');
+    var reportPanels = document.querySelectorAll('[data-kid-report-panel]');
+
+    function activateReport(tabName) {
+      reportButtons.forEach(function (btn) {
+        btn.classList.toggle('is-active', btn.getAttribute('data-kid-report-tab') === tabName);
+      });
+      reportPanels.forEach(function (panel) {
+        panel.classList.toggle('is-active', panel.getAttribute('data-kid-report-panel') === tabName);
+      });
+    }
+
+    reportButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activateReport(btn.getAttribute('data-kid-report-tab'));
+      });
+    });
+
+    var initialReportTab = params.get('report');
+    if (initialReportTab === 'weekly' || initialReportTab === 'monthly' || initialReportTab === 'daily') {
+      activateReport(initialReportTab);
+    }
+
+    var modeButtons = document.querySelectorAll('[data-month-mode-toggle="kid"] [data-month-mode]');
+    var modePanels = document.querySelectorAll('[data-kid-report-panel="monthly"] [data-month-mode-panel]');
+    function activateMode(mode) {
+      modeButtons.forEach(function (btn) {
+        btn.classList.toggle('is-active', btn.getAttribute('data-month-mode') === mode);
+      });
+      modePanels.forEach(function (panel) {
+        panel.classList.toggle('is-active', panel.getAttribute('data-month-mode-panel') === mode);
+      });
+    }
+    modeButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activateMode(btn.getAttribute('data-month-mode'));
+      });
+    });
+  })();
+</script>
+{% endblock %}
+

@@ -1,0 +1,80 @@
+{
+  "name": "Little Starts Bank - Reward Tracker",
+  "short_name": "Little Starts Bank",
+  "description": "Where little tasks become big rewards.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#eb6b4a",
+  "categories": ["education", "productivity"],
+  "screenshots": [
+    {
+      "src": "/star-bank-screenshot.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/star-bank-screenshot-wide.png",
+      "sizes": "1024x600",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/star-bank-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/star-bank-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/star-bank-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/star-bank-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Parent Mode",
+      "short_name": "Parent",
+      "description": "Access parent mode to add stars and manage settings",
+      "url": "/?mode=parent",
+      "icons": [
+        {
+          "src": "/star-bank-logo.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Kid Mode",
+      "short_name": "Kid View",
+      "description": "View your stars and rewards",
+      "url": "/?mode=kid",
+      "icons": [
+        {
+          "src": "/star-bank-logo.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

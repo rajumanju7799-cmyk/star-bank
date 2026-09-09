@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<body style="font-family: Arial, sans-serif; background:#fff7cc; padding:24px; color:#1f2937;">
+  <div style="max-width:600px; margin:0 auto; background:#ffffff; border-radius:24px; padding:32px; box-shadow:0 20px 40px rgba(0,0,0,0.08);">
+    <h1 style="margin-top:0; color:#d97706;">Activate your Little Starts Bank account</h1>
+    <p>Hi {{ user.display_name|default:user.email }},</p>
+    <p>Welcome to <strong>{{ site_name }}</strong>. Please verify your email address before logging in.</p>
+    <p style="margin:28px 0;">
+      <a href="{{ activation_url }}" style="display:inline-block; background:#f59e0b; color:#fff; padding:14px 22px; border-radius:14px; text-decoration:none; font-weight:700;">Activate account</a>
+    </p>
+    <p>If the button does not work, paste this URL into your browser:</p>
+    <p><a href="{{ activation_url }}">{{ activation_url }}</a></p>
+    <p>If you did not register, you can safely ignore this email.</p>
+    <p>— {{ site_name }}</p>
+  </div>
+</body>
+</html>
+

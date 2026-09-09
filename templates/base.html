@@ -1,0 +1,355 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f59e0b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Little Star Bank">
+  <title>{% block title %}Little Star Bank{% endblock %}</title>
+  <meta name="description" content="Little Star Bank helps families track stars, routines, and rewards. Where little tasks become big rewards.">
+  <link rel="icon" href="{% static 'images/favicon.png' %}" type="image/png">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block extra_head %}{% endblock %}
+  {% if request.user.is_authenticated %}
+  <style>
+    /* ── Theme picker — always inlined so stale staticfiles never break it ── */
+    .sb-tw{position:relative;display:inline-flex;}
+    .sb-tt{display:inline-flex;align-items:center;gap:.48rem;padding:.5rem .95rem;
+           border-radius:999px;background:rgba(255,255,255,.88);
+           border:1.5px solid rgba(255,255,255,.95);cursor:pointer;
+           font:700 .87rem/1 inherit;color:#1f2937;white-space:nowrap;
+           box-shadow:0 2px 14px rgba(0,0,0,.1),inset 0 1px 0 #fff;
+           backdrop-filter:blur(12px);transition:box-shadow .2s,transform .15s;}
+    .sb-tt:hover{box-shadow:0 6px 22px rgba(0,0,0,.16);transform:translateY(-1px);}
+    .sb-tt:active{transform:translateY(0);}
+    .sb-tt:focus-visible{outline:3px solid #f59e0b;outline-offset:2px;}
+    .sb-td{width:1rem;height:1rem;border-radius:50%;flex-shrink:0;
+           border:2px solid rgba(255,255,255,.75);
+           box-shadow:0 1px 5px rgba(0,0,0,.25);transition:background .35s;}
+    .sb-tl{font-size:.87rem;font-weight:700;}
+    .sb-tc-chevron{font-size:.65rem;color:#6b7280;transition:transform .22s;}
+    .sb-tt[aria-expanded="true"] .sb-tc-chevron{transform:rotate(180deg);}
+
+    .sb-tp{display:none;position:absolute;top:calc(100% + .7rem);right:0;z-index:9999;
+           width:18.5rem;background:rgba(255,255,255,.98);
+           border:1.5px solid rgba(255,255,255,.9);border-radius:22px;
+           box-shadow:0 28px 72px rgba(0,0,0,.2),0 6px 20px rgba(0,0,0,.1);
+           backdrop-filter:blur(24px);padding:1.1rem;}
+    .sb-tp.open{display:block;animation:sb-pop .2s cubic-bezier(.34,1.56,.64,1) both;}
+    @keyframes sb-pop{from{opacity:0;transform:scale(.93) translateY(-8px);}to{opacity:1;transform:scale(1) translateY(0);}}
+    .sb-tp-hd{font-size:.72rem;font-weight:700;letter-spacing:.07em;
+              text-transform:uppercase;color:#6b7280;margin:0 0 .85rem;}
+    .sb-tg{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+
+    .sb-tc{padding:0;border:2.5px solid rgba(0,0,0,.08);border-radius:16px;
+           overflow:hidden;cursor:pointer;background:none;text-align:left;
+           transition:transform .2s cubic-bezier(.34,1.56,.64,1),
+                       box-shadow .2s,border-color .2s;}
+    .sb-tc:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 30px rgba(0,0,0,.18);}
+    .sb-tc:focus-visible{outline:3px solid #f59e0b;outline-offset:2px;}
+    .sb-tc[data-active="true"]{box-shadow:0 0 0 3.5px var(--tc-ring),0 8px 24px rgba(0,0,0,.15);}
+    .sb-tc[data-theme="sunny"]{--tc-ring:#f59e0b;}
+    .sb-tc[data-theme="sky"]  {--tc-ring:#0ea5e9;}
+    .sb-tc[data-theme="forest"]{--tc-ring:#22c55e;}
+    .sb-tc[data-theme="candy"]{--tc-ring:#ec4899;}
+
+    .sb-tc-sw{display:block;width:100%;height:5rem;position:relative;}
+    .sb-tc-sw-inner{position:absolute;inset:0;}
+    /* active overlay checkmark */
+    .sb-tc[data-active="true"] .sb-tc-sw::after{
+      content:'✓';position:absolute;top:.4rem;right:.5rem;
+      font-size:1.1rem;font-weight:900;color:#fff;
+      text-shadow:0 1px 4px rgba(0,0,0,.45);opacity:1;}
+
+    .sb-tc-ft{display:flex;align-items:center;gap:.42rem;padding:.48rem .65rem;
+              background:#fff;border-top:1px solid rgba(0,0,0,.06);}
+    .sb-tc-dot{width:.72rem;height:.72rem;border-radius:50%;flex-shrink:0;
+               border:1.5px solid rgba(0,0,0,.1);}
+    .sb-tc-name{font-size:.82rem;font-weight:700;color:#1f2937;flex:1;white-space:nowrap;}
+
+    @media(max-width:720px){
+      .sb-tl{display:none;}
+      .sb-tt{padding:.5rem .7rem;gap:.35rem;}
+      .sb-tp{width:calc(100vw - 2rem);right:auto;left:50%;transform:translateX(-50%);}
+      .sb-tp.open{transform:translateX(-50%);
+        animation:sb-pop-m .2s cubic-bezier(.34,1.56,.64,1) both;}
+      @keyframes sb-pop-m{
+        from{opacity:0;transform:translateX(-50%) scale(.93) translateY(-8px);}
+        to  {opacity:1;transform:translateX(-50%) scale(1)   translateY(0);}}
+    }
+  </style>
+  {% endif %}
+</head>
+<body class="{% if request.user.is_authenticated and family_settings %}theme-{{ family_settings.theme }}{% else %}theme-sunny{% endif %}">
+<div class="site-shell">
+  <div class="page-glow" aria-hidden="true"></div>
+  {% if request.user.is_authenticated %}
+    {# Global CSRF token for JS fetch calls #}
+    <form id="sb-global-csrf" style="display:none">{% csrf_token %}</form>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="{% url 'starbank:home' %}" class="brand">
+          <img src="{% static 'images/logo.png' %}" alt="Little Star Bank logo">
+          <div>
+            <div class="brand-title">Little Star Bank</div>
+            <div class="brand-subtitle">Where little tasks become big rewards.</div>
+          </div>
+        </a>
+        <div class="nav-actions">
+          <nav class="nav-links">
+            {% if request.resolver_match and request.resolver_match.url_name == 'kid-dashboard' %}
+              <a class="pill" href="{% url 'starbank:parent-pin' %}">Parent View</a>
+            {% else %}
+              <a class="pill" href="{% url 'starbank:home' %}">Home</a>
+              <a class="pill" href="{% url 'starbank:kid-dashboard' %}">Kid View</a>
+              <a class="pill" href="{% url 'starbank:parent-dashboard' %}">Parent View</a>
+              <a class="pill" href="{% url 'starbank:settings' %}">Settings</a>
+            {% endif %}
+            <button class="pill" id="install-app-btn" type="button" style="display:none;">Install App</button>
+            <a class="pill" href="{% url 'accounts:logout' %}">Logout</a>
+          </nav>
+          <div class="nav-divider" aria-hidden="true"></div>
+          {# ── Theme picker dropdown ── #}
+          <div class="sb-tw" id="sb-theme-wrap">
+            <button class="sb-tt" id="sb-theme-toggle" type="button"
+                    aria-expanded="false" aria-haspopup="true" aria-controls="sb-theme-panel">
+              <span class="sb-td" id="sb-theme-dot"
+                style="background:{% if family_settings.theme == 'sky' %}#0ea5e9{% elif family_settings.theme == 'forest' %}#22c55e{% elif family_settings.theme == 'candy' %}#ec4899{% else %}#f59e0b{% endif %};"></span>
+              <span class="sb-tl">Theme</span>
+              <span class="sb-tc-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="sb-tp" id="sb-theme-panel" role="dialog" aria-label="Choose colour theme">
+              <p class="sb-tp-hd">🎨 Choose a theme</p>
+              <div class="sb-tg">
+
+                <button class="sb-tc" type="button" data-theme="sunny"
+                        {% if family_settings.theme == 'sunny' %}data-active="true"{% endif %}>
+                  <span class="sb-tc-sw">
+                    <span class="sb-tc-sw-inner" style="background:linear-gradient(135deg,#fef08a 0%,#fde047 40%,#fb923c 100%);"></span>
+                  </span>
+                  <span class="sb-tc-ft">
+                    <span class="sb-tc-dot" style="background:#f59e0b;"></span>
+                    <span class="sb-tc-name">☀️ Sunny Yellow</span>
+                  </span>
+                </button>
+
+                <button class="sb-tc" type="button" data-theme="sky"
+                        {% if family_settings.theme == 'sky' %}data-active="true"{% endif %}>
+                  <span class="sb-tc-sw">
+                    <span class="sb-tc-sw-inner" style="background:linear-gradient(135deg,#7dd3fc 0%,#38bdf8 40%,#818cf8 100%);"></span>
+                  </span>
+                  <span class="sb-tc-ft">
+                    <span class="sb-tc-dot" style="background:#0ea5e9;"></span>
+                    <span class="sb-tc-name">🌊 Sky Blue</span>
+                  </span>
+                </button>
+
+                <button class="sb-tc" type="button" data-theme="forest"
+                        {% if family_settings.theme == 'forest' %}data-active="true"{% endif %}>
+                  <span class="sb-tc-sw">
+                    <span class="sb-tc-sw-inner" style="background:linear-gradient(135deg,#86efac 0%,#4ade80 40%,#fde68a 100%);"></span>
+                  </span>
+                  <span class="sb-tc-ft">
+                    <span class="sb-tc-dot" style="background:#22c55e;"></span>
+                    <span class="sb-tc-name">🌿 Forest Green</span>
+                  </span>
+                </button>
+
+                <button class="sb-tc" type="button" data-theme="candy"
+                        {% if family_settings.theme == 'candy' %}data-active="true"{% endif %}>
+                  <span class="sb-tc-sw">
+                    <span class="sb-tc-sw-inner" style="background:linear-gradient(135deg,#f9a8d4 0%,#f472b6 40%,#c084fc 100%);"></span>
+                  </span>
+                  <span class="sb-tc-ft">
+                    <span class="sb-tc-dot" style="background:#ec4899;"></span>
+                    <span class="sb-tc-name">🍭 Candy Pink</span>
+                  </span>
+                </button>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  {% endif %}
+
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer container">
+    <small>© {% now 'Y' %} Little Star Bank — Where little tasks become big rewards.</small>
+  </footer>
+</div><!-- end .site-shell -->
+
+{% if messages %}
+<style>
+  @keyframes toast-pop { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: scale(1); } }
+  .sb-toast-item { transition: opacity .4s ease, transform .4s ease; }
+  .sb-toast-item.hiding { opacity: 0 !important; transform: scale(0.93) !important; }
+</style>
+<div id="sb-toast-wrap"
+     style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+            z-index:2147483647;display:flex;flex-direction:column;
+            align-items:center;gap:0.75rem;pointer-events:none;
+            width:max-content;max-width:min(30rem,calc(100vw - 2rem));"
+     aria-live="polite" aria-atomic="true">
+  {% for message in messages %}
+    {% if message.tags == 'success' %}
+      <div class="sb-toast-item"
+           style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
+                  padding:1rem 1.25rem;border-radius:18px;
+                  background:#dcfce7;color:#166534;border:1px solid #bbf7d0;
+                  box-shadow:0 24px 64px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.15);
+                  font-size:0.98rem;font-weight:700;line-height:1.45;
+                  pointer-events:auto;min-width:18rem;width:100%;
+                  animation:toast-pop .25s ease both;"
+           role="alert">
+        <span>{{ message }}</span>
+        <button onclick="this.closest('.sb-toast-item').remove()"
+                style="background:none;border:none;cursor:pointer;font-size:1.1rem;
+                       opacity:.6;padding:0 0 0 .5rem;color:inherit;flex-shrink:0;">✕</button>
+      </div>
+    {% elif message.tags == 'error' or message.tags == 'danger' %}
+      <div class="sb-toast-item"
+           style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
+                  padding:1rem 1.25rem;border-radius:18px;
+                  background:#fee2e2;color:#991b1b;border:1px solid #fecaca;
+                  box-shadow:0 24px 64px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.15);
+                  font-size:0.98rem;font-weight:700;line-height:1.45;
+                  pointer-events:auto;min-width:18rem;width:100%;
+                  animation:toast-pop .25s ease both;"
+           role="alert">
+        <span>{{ message }}</span>
+        <button onclick="this.closest('.sb-toast-item').remove()"
+                style="background:none;border:none;cursor:pointer;font-size:1.1rem;
+                       opacity:.6;padding:0 0 0 .5rem;color:inherit;flex-shrink:0;">✕</button>
+      </div>
+    {% elif message.tags == 'warning' %}
+      <div class="sb-toast-item"
+           style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
+                  padding:1rem 1.25rem;border-radius:18px;
+                  background:#fef3c7;color:#92400e;border:1px solid #fde68a;
+                  box-shadow:0 24px 64px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.15);
+                  font-size:0.98rem;font-weight:700;line-height:1.45;
+                  pointer-events:auto;min-width:18rem;width:100%;
+                  animation:toast-pop .25s ease both;"
+           role="alert">
+        <span>{{ message }}</span>
+        <button onclick="this.closest('.sb-toast-item').remove()"
+                style="background:none;border:none;cursor:pointer;font-size:1.1rem;
+                       opacity:.6;padding:0 0 0 .5rem;color:inherit;flex-shrink:0;">✕</button>
+      </div>
+    {% else %}
+      <div class="sb-toast-item"
+           style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
+                  padding:1rem 1.25rem;border-radius:18px;
+                  background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;
+                  box-shadow:0 24px 64px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.15);
+                  font-size:0.98rem;font-weight:700;line-height:1.45;
+                  pointer-events:auto;min-width:18rem;width:100%;
+                  animation:toast-pop .25s ease both;"
+           role="alert">
+        <span>{{ message }}</span>
+        <button onclick="this.closest('.sb-toast-item').remove()"
+                style="background:none;border:none;cursor:pointer;font-size:1.1rem;
+                       opacity:.6;padding:0 0 0 .5rem;color:inherit;flex-shrink:0;">✕</button>
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+<script>
+  // Auto-dismiss toasts after 5 s
+  document.querySelectorAll('.sb-toast-item').forEach(function(el) {
+    setTimeout(function() {
+      el.classList.add('hiding');
+      setTimeout(function() { el.remove(); }, 420);
+    }, 5000);
+  });
+</script>
+{% endif %}
+
+
+<script>
+  (function () {
+    /* ── PWA install prompt ─────────────────────────────────── */
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js').catch(function () {});
+    }
+
+    var installButton = document.getElementById('install-app-btn');
+    if (installButton) {
+      var deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        deferredPrompt = event;
+        installButton.style.display = 'inline-flex';
+      });
+      installButton.addEventListener('click', async function () {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installButton.style.display = 'none';
+      });
+      window.addEventListener('appinstalled', function () {
+        deferredPrompt = null;
+        installButton.style.display = 'none';
+      });
+    }
+
+    /* ── Global theme picker (dropdown panel) ──────────────── */
+    (function () {
+      var wrap   = document.getElementById('sb-theme-wrap');
+      var toggle = document.getElementById('sb-theme-toggle');
+      var panel  = document.getElementById('sb-theme-panel');
+      var dot    = document.getElementById('sb-theme-dot');
+      if (!wrap || !toggle || !panel) return;
+
+      var csrfInput = document.querySelector('#sb-global-csrf [name="csrfmiddlewaretoken"]');
+      var cards     = panel.querySelectorAll('.sb-tc');
+      var THEME_URL = "{% url 'starbank:set-theme' %}";
+      var DOTS = { sunny:'#f59e0b', sky:'#0ea5e9', forest:'#22c55e', candy:'#ec4899' };
+
+      function openPanel()  { panel.classList.add('open'); toggle.setAttribute('aria-expanded','true'); }
+      function closePanel() { panel.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); }
+      function isOpen()     { return panel.classList.contains('open'); }
+
+      toggle.addEventListener('click', function(e){
+        e.stopPropagation();
+        isOpen() ? closePanel() : openPanel();
+      });
+      document.addEventListener('click', function(e){ if (!wrap.contains(e.target)) closePanel(); });
+      document.addEventListener('keydown', function(e){ if (e.key==='Escape') closePanel(); });
+
+      function markActive(theme) {
+        cards.forEach(function(c){
+          c.setAttribute('data-active', c.getAttribute('data-theme')===theme ? 'true' : 'false');
+        });
+        if (dot && DOTS[theme]) dot.style.background = DOTS[theme];
+      }
+
+      cards.forEach(function(card){
+        card.addEventListener('click', function(){
+          var theme = card.getAttribute('data-theme');
+          document.body.className =
+            document.body.className.replace(/\btheme-\S+/g,'').trim() + ' theme-' + theme;
+          markActive(theme);
+          closePanel();
+          var fd = new FormData();
+          fd.append('theme', theme);
+          if (csrfInput) fd.append('csrfmiddlewaretoken', csrfInput.value);
+          fetch(THEME_URL, { method:'POST', body:fd }).catch(function(){});
+        });
+      });
+    })();
+  })();
+</script>
+</body>
+</html>

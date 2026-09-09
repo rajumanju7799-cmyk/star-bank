@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Settings · Little Starts Bank{% endblock %}
+{% block content %}
+<div class="layout-grid">
+  <aside class="sidebar-card stack">
+    <h2 class="section-title">Settings overview</h2>
+    <p class="muted">Fine tune the family account, add children, define default tasks, and control notifications.</p>
+    <form method="get" class="form-grid">
+      <label>Active goal profile
+        <select name="kid" onchange="this.form.submit()">
+          {% for kid in kids %}
+            <option value="{{ kid.id }}" {% if kid.id == selected_kid.id %}selected{% endif %}>{{ kid.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </form>
+
+    <div class="panel" style="margin-top: 1rem;">
+      <h3 class="section-title">Email queue status</h3>
+      <p class="muted" id="email-queue-message">Checking queue connectivity...</p>
+      <span class="badge" id="email-queue-badge">Checking</span>
+    </div>
+  </aside>
+  <section class="stack">
+    <div class="hero-card">
+      <h1 class="page-title">Family settings</h1>
+      <p class="muted">This page is designed to use space better on laptops and desktops while staying mobile friendly.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h2 class="section-title">App preferences</h2>
+        <form method="post" class="form-grid">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save-settings">
+          {% for field in settings_form %}<label>{{ field.label }}{{ field }}</label>{% endfor %}
+          <button class="btn btn-primary" type="submit">Save settings</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2 class="section-title">Add a kid profile</h2>
+        <form method="post" class="form-grid">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add-kid">
+          {% for field in kid_form %}<label>{{ field.label }}{{ field }}</label>{% endfor %}
+          <button class="btn btn-secondary" type="submit">Add kid</button>
+        </form>
+        <div class="task-list" style="margin-top: 1rem;">
+          {% for kid in kids %}
+            <form method="post" class="task-item form-grid" style="gap:0.6rem;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="quick-edit-kid">
+              <input type="hidden" name="kid_id" value="{{ kid.id }}">
+              <div class="row-between">
+                <strong>{{ kid.avatar_emoji }} {{ kid.name }}</strong>
+                {% if kid.id == selected_kid.id %}
+                  <span class="badge badge-info">Active</span>
+                {% else %}
+                  <span class="badge">Profile</span>
+                {% endif %}
+              </div>
+              <div class="form-row">
+                <label>Name<input type="text" name="name" value="{{ kid.name }}" required></label>
+                <label>Avatar<input type="text" name="avatar_emoji" value="{{ kid.avatar_emoji }}" maxlength="8"></label>
+              </div>
+              <button class="btn btn-outline" type="submit">Save {{ kid.name }}</button>
+            </form>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="section-title">Edit {{ selected_kid.name }} profile</h2>
+        <form method="post" class="form-grid">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="edit-kid">
+          <input type="hidden" name="kid" value="{{ selected_kid.id }}">
+          {% for field in edit_kid_form %}<label>{{ field.label }}{{ field }}</label>{% endfor %}
+          <button class="btn btn-outline" type="submit">Update kid profile</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h2 class="section-title">Default task templates</h2>
+        <form method="post" class="form-grid">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add-template">
+          {% for field in task_form %}<label>{{ field.label }}{{ field }}</label>{% endfor %}
+          <button class="btn btn-primary" type="submit">Add default task</button>
+        </form>
+        <div class="task-list" style="margin-top:1rem;">
+          {% for template in templates %}
+            <div class="task-item"><div class="row-between"><strong>{{ template.name }}</strong><span class="badge">{{ template.stars }} ⭐</span></div></div>
+          {% empty %}
+            <div class="task-item"><span class="muted">No default tasks yet.</span></div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="section-title">Savings goals for {{ selected_kid.name }}</h2>
+        <form method="post" class="form-grid">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add-goal">
+          <input type="hidden" name="kid" value="{{ selected_kid.id }}">
+          {% for field in goal_form %}<label>{{ field.label }}{{ field }}</label>{% endfor %}
+          <button class="btn btn-secondary" type="submit">Add savings goal</button>
+        </form>
+        <div class="goal-list" style="margin-top:1rem;">
+          {% for goal in selected_kid.savings_goals.all %}
+            <div class="goal-item"><div class="row-between"><strong>{{ goal.image_emoji }} {{ goal.name }}</strong><span class="badge badge-info">${{ goal.current_amount }} / ${{ goal.target_amount }}</span></div></div>
+          {% empty %}
+            <div class="goal-item"><span class="muted">No goals yet for this child.</span></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<script>
+  (function () {
+    var badge = document.getElementById('email-queue-badge');
+    var message = document.getElementById('email-queue-message');
+    if (!badge || !message) {
+      return;
+    }
+
+    var controller = new AbortController();
+    setTimeout(function () {
+      controller.abort();
+    }, 2500);
+
+    fetch("{% url 'starbank:email-queue-health' %}", { signal: controller.signal })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error('Health request failed');
+        }
+        return response.json();
+      })
+      .then(function (data) {
+        var status = data.status || 'unknown';
+        badge.textContent = status;
+        message.textContent = data.message || 'Queue status unavailable.';
+        if (status === 'healthy') {
+          badge.className = 'badge badge-info';
+        } else if (status === 'eager') {
+          badge.className = 'badge';
+        } else {
+          badge.className = 'badge badge-warning';
+        }
+      })
+      .catch(function () {
+        badge.textContent = 'degraded';
+        badge.className = 'badge badge-warning';
+        message.textContent = 'Could not check queue status right now.';
+      });
+  })();
+</script>
+{% endblock %}
+

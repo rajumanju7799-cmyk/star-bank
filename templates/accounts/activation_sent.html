@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Activation sent · Little Starts Bank{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <div class="panel" style="max-width: 720px; width: 100%; text-align: center;">
+    <h1 class="page-title">Check your inbox</h1>
+    <p class="muted">We sent an activation link to <strong>{{ email|default:'your email address' }}</strong>. Open it to activate your Little Starts Bank account.</p>
+    <div class="row-between" style="justify-content: center; margin-top: 1rem;">
+      <a class="btn btn-primary" href="{% url 'accounts:login' %}">Back to login</a>
+      <a class="btn btn-outline" href="{% url 'accounts:register' %}">Register another account</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

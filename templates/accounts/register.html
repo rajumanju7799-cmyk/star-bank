@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Register · Little Starts Bank{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <div class="auth-card">
+    <section class="auth-hero">
+      <span class="hero-note">Launch your family reward bank</span>
+      <h1 class="page-title" style="margin-top: 1rem;">Create a secure Little Starts Bank account</h1>
+      <p class="muted">We will send an activation email before access is granted so your family dashboard stays safe and tied to your verified email.</p>
+      <div class="stack" style="margin-top: 1.5rem;">
+        <div class="card"><strong>Multiple kids</strong><br><span class="muted">Create profiles, switch dashboards, and manage stars from one account.</span></div>
+        <div class="card"><strong>Daily reports</strong><br><span class="muted">Track weekly/monthly progress with parent-friendly dashboards.</span></div>
+      </div>
+    </section>
+    <section class="auth-form">
+      <h2 class="section-title">Register</h2>
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        {% for field in form %}
+          <label>{{ field.label }}{{ field }}</label>
+          {% for error in field.errors %}<div class="flash error">{{ error }}</div>{% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}<div class="flash error">{{ error }}</div>{% endfor %}
+        <button class="btn btn-primary" type="submit">Create account</button>
+      </form>
+      <p class="muted" style="margin-top: 1rem;">Already verified? <a href="{% url 'accounts:login' %}" style="color: var(--primary-dark); font-weight: 700;">Login here</a></p>
+    </section>
+  </div>
+</div>
+{% endblock %}
+

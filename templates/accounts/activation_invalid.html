@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Invalid activation · Little Starts Bank{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <div class="panel" style="max-width: 720px; width: 100%; text-align: center;">
+    <h1 class="page-title">Activation link is invalid</h1>
+    <p class="muted">The activation link may be expired or already used. Try logging in or request a new activation email.</p>
+    <div class="row-between" style="justify-content: center; margin-top: 1rem;">
+      <a class="btn btn-primary" href="{% url 'accounts:login' %}">Go to login</a>
+      <a class="btn btn-outline" href="{% url 'accounts:register' %}">Create a new account</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

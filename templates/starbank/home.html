@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Home · Little Starts Bank{% endblock %}
+{% block content %}
+<div class="layout-grid">
+  <aside class="sidebar-card stack">
+    <div>
+      <h2 class="section-title">Family overview</h2>
+      <p class="muted">Manage multiple kids, keep rewards permanent in the database, and open the mode you need.</p>
+      <div class="feature-chip-row">
+        <span class="feature-chip">👨‍👩‍👧 {{ family_kids|length }} kid profiles</span>
+        <span class="feature-chip">🔐 Parent PIN protected</span>
+      </div>
+    </div>
+    <div class="task-list">
+      {% for kid in family_kids %}
+        <div class="task-item">
+          <div class="row-between">
+            <strong>{{ kid.avatar_emoji }} {{ kid.name }}</strong>
+            <a class="badge badge-info" href="{% url 'starbank:kid-dashboard' %}?kid={{ kid.id }}">Kid view</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </aside>
+  <section class="stack">
+    <div class="hero-card home-hero">
+      <h1 class="page-title">A better family reward dashboard</h1>
+      <p class="muted">Pick the experience you want right now. Parent Mode is protected by PIN, while Kid Mode stays cheerful and motivating.</p>
+      <div class="feature-chip-row">
+        <span class="feature-chip">🌟 Little Star Bank</span>
+        <span class="feature-chip">🎯 Where little tasks become big rewards.</span>
+      </div>
+      <div class="nav-actions" style="margin-top: 1rem;">
+        <a class="btn btn-primary" href="{% url 'starbank:kid-dashboard' %}">Open Kid View</a>
+        <a class="btn btn-outline" href="{% url 'starbank:parent-pin' %}">Open Parent View</a>
+      </div>
+      <div class="grid-2" style="margin-top: 1rem;">
+        <a class="card panel-play" href="{% url 'starbank:kid-dashboard' %}">
+          <h3 class="section-title">Kid Mode</h3>
+          <p class="muted">See stars, today's tasks, savings goals, and requests in a big friendly layout.</p>
+        </a>
+        <a class="card panel-soft" href="{% url 'starbank:parent-pin' %}">
+          <h3 class="section-title">Parent Mode</h3>
+          <p class="muted">Award stars, manage tasks, review requests, and update family settings.</p>
+        </a>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card panel-play"><h3 class="section-title">Email activation</h3><p class="muted">Secure registration with proper activation flow before account access.</p></div>
+      <div class="card panel-soft"><h3 class="section-title">Permanent storage</h3><p class="muted">All progress is stored in Django models with PostgreSQL-ready config.</p></div>
+      <div class="card panel-play"><h3 class="section-title">Daily summaries</h3><p class="muted">Families can opt into scheduled summary emails and reminders.</p></div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+

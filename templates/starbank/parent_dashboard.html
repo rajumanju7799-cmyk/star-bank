@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% block title %}Parent Dashboard · Little Starts Bank{% endblock %}
+{% block content %}
+<div class="stack" style="padding: 1.5rem 0 2.5rem;">
+  <!-- inline flash replaced by js popup toast below -->
+  <div class="panel panel-soft">
+    <div class="top-control-bar">
+      <form method="get" class="form-grid">
+        <label>Managing dashboard for
+          <select name="kid" onchange="this.form.submit()">
+            {% for kid in kids %}
+              <option value="{{ kid.id }}" {% if kid.id == selected_kid.id %}selected{% endif %}>{{ kid.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </form>
+      <div class="nav-actions">
+        <a class="btn btn-outline" href="{% url 'starbank:reports' %}?kid={{ selected_kid.id }}">Reports</a>
+        <a class="btn btn-outline" href="{% url 'starbank:settings' %}?kid={{ selected_kid.id }}">Settings</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="stack">
+    <div class="hero-card parent-hero">
+      <div class="row-between">
+        <div>
+          <h1 class="page-title">Parent dashboard for {{ selected_kid.name }}</h1>
+          <p class="muted">Award stars, add tasks, and keep the day moving with clear feedback.</p>
+          <div class="feature-chip-row">
+            <span class="feature-chip">🧭 Parent control center</span>
+            <span class="feature-chip">⚡ Quick daily actions</span>
+          </div>
+        </div>
+        <span class="badge">⭐ {{ selected_kid.avatar_emoji }}</span>
+      </div>
+      <div class="stat-grid" style="margin-top: 1rem;">
+        <div class="stat-card stat-card--sunny"><div class="stat-label">Today's Stars</div><div class="stat-value">{{ today_stars }}/{{ daily_limit }}</div></div>
+        <div class="stat-card stat-card--mint"><div class="stat-label">Lifetime Stars</div><div class="stat-value">{{ total_stars }}</div></div>
+        <div class="stat-card stat-card--lavender"><div class="stat-label">Pending Requests</div><div class="stat-value">{{ pending_requests|length }}</div></div>
+      </div>
+    </div>
+
+    <div class="panel panel-soft">
+      <div class="row-between">
+        <h2 class="section-title">Today's tasks</h2>
+        <span class="muted">Stars can only be awarded once per task type each day.</span>
+      </div>
+      <div class="task-list">
+        {% for task in today_tasks %}
+          <div class="task-item">
+            <div class="task-head">
+              <div>
+                <strong>{{ task.name }}</strong>
+                <div class="task-meta">{{ task.stars }} ⭐ {% if task.completed_at %}· Completed {{ task.completed_at|date:'M j, g:i a' }}{% endif %}</div>
+              </div>
+              <div class="nav-actions">
+                {% if task.completed_at %}
+                  <span class="badge badge-success">Awarded</span>
+                {% else %}
+                  <form method="post" action="{% url 'starbank:complete-daily-task' task.id %}" data-award-form="true">{% csrf_token %}<button class="btn btn-success" type="submit">Award stars</button></form>
+                {% endif %}
+                <form method="post" action="{% url 'starbank:delete-daily-task' task.id %}">{% csrf_token %}<button class="btn btn-danger" type="submit">Delete</button></form>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="task-item"><span class="muted">No tasks yet for today.</span></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel panel-soft">
+      <div class="row-between">
+        <h2 class="section-title">Daily actions</h2>
+        <div class="tab-strip" id="parent-action-tabs">
+          <button type="button" class="tab-btn is-active" data-tab="add-task">Add task</button>
+          <button type="button" class="tab-btn" data-tab="subtract-stars">Subtract stars</button>
+        </div>
+      </div>
+      <div class="tab-panel is-active" data-panel="add-task">
+        <form method="post" action="{% url 'starbank:add-daily-task' %}" class="form-grid">
+          {% csrf_token %}
+          <input type="hidden" name="kid" value="{{ selected_kid.id }}">
+          {% for field in add_task_form %}<label>{{ field.label }}{{ field }}</label>{% endfor %}
+          <button class="btn btn-primary" type="submit">Add task</button>
+        </form>
+      </div>
+      <div class="tab-panel" data-panel="subtract-stars">
+        <form method="post" action="{% url 'starbank:subtract-stars' %}" class="form-grid">
+          {% csrf_token %}
+          <input type="hidden" name="kid" value="{{ selected_kid.id }}">
+          {% for field in subtract_form %}<label>{{ field.label }}{{ field }}</label>{% endfor %}
+          <button class="btn btn-danger" type="submit">Subtract stars</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="panel panel-soft">
+      <div class="row-between">
+        <h2 class="section-title">Withdrawal requests</h2>
+        <span class="muted">All statuses with timestamps</span>
+      </div>
+      <div class="request-list">
+        {% for request in all_requests %}
+          <div class="request-item">
+            <div class="row-between">
+              <strong>${{ request.amount }} · {{ request.get_category_display }}</strong>
+              {% if request.status == 'approved' %}
+                <span class="badge badge-success">Approved</span>
+              {% elif request.status == 'rejected' %}
+                <span class="badge badge-danger">Rejected</span>
+              {% else %}
+                <span class="badge">Pending</span>
+              {% endif %}
+            </div>
+            <p class="muted" style="margin: 0;">{{ request.description }}</p>
+            <span class="muted">Requested on {{ request.created_at|date:'M j, g:i a' }}</span>
+            {% if request.status == 'pending' %}
+              <div class="nav-actions">
+                <form method="post" action="{% url 'starbank:review-withdrawal' request.id 'approve' %}">{% csrf_token %}<button class="btn btn-success">Approve</button></form>
+                <form method="post" action="{% url 'starbank:review-withdrawal' request.id 'reject' %}">{% csrf_token %}<button class="btn btn-danger">Reject</button></form>
+              </div>
+            {% endif %}
+          </div>
+        {% empty %}
+          <div class="request-item"><span class="muted">No withdrawal requests right now.</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  (function () {
+    var tabsRoot = document.getElementById('parent-action-tabs');
+    if (!tabsRoot) {
+      return;
+    }
+    var buttons = tabsRoot.querySelectorAll('[data-tab]');
+    var panels = document.querySelectorAll('[data-panel]');
+
+    function activate(tabName) {
+      buttons.forEach(function (btn) {
+        btn.classList.toggle('is-active', btn.getAttribute('data-tab') === tabName);
+      });
+      panels.forEach(function (panel) {
+        panel.classList.toggle('is-active', panel.getAttribute('data-panel') === tabName);
+      });
+    }
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activate(btn.getAttribute('data-tab'));
+      });
+    });
+
+    /* ── popup toast ───────────────────────────────────────────── */
+    var toastWrap = (function () {
+      var wrap = document.getElementById('sb-toast-wrap');
+      if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.id = 'sb-toast-wrap';
+        wrap.setAttribute('aria-live', 'polite');
+        wrap.setAttribute('aria-atomic', 'true');
+        Object.assign(wrap.style, {
+          position: 'fixed', top: '50%', left: '50%',
+          transform: 'translate(-50%,-50%)',
+          zIndex: '2147483647', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', gap: '0.75rem', pointerEvents: 'none',
+          width: 'max-content',
+          maxWidth: 'min(30rem, calc(100vw - 2rem))'
+        });
+        document.body.appendChild(wrap);
+      }
+      return wrap;
+    })();
+
+    var PALETTE = {
+      success: { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' },
+      error:   { bg: '#fee2e2', color: '#991b1b', border: '#fecaca' },
+      warning: { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
+      info:    { bg: '#dbeafe', color: '#1d4ed8', border: '#bfdbfe' },
+    };
+
+    function showFlash(type, text) {
+      var p = PALETTE[type] || PALETTE.info;
+      var item = document.createElement('div');
+      item.className = 'sb-toast-item';
+      Object.assign(item.style, {
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: '0.75rem', padding: '1rem 1.25rem', borderRadius: '18px',
+        background: p.bg, color: p.color, border: '1px solid ' + p.border,
+        boxShadow: '0 24px 64px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.15)',
+        fontSize: '0.98rem', fontWeight: '700', lineHeight: '1.45',
+        pointerEvents: 'auto', minWidth: '18rem', width: '100%',
+        animation: 'toast-pop .25s ease both'
+      });
+      item.setAttribute('role', 'alert');
+
+      var span = document.createElement('span');
+      span.textContent = text;
+
+      var btn = document.createElement('button');
+      btn.textContent = '✕';
+      Object.assign(btn.style, {
+        background: 'none', border: 'none', cursor: 'pointer',
+        fontSize: '1.1rem', opacity: '.6', padding: '0 0 0 .5rem',
+        color: 'inherit', flexShrink: '0'
+      });
+      btn.onclick = function () { dismissToast(item); };
+
+      item.appendChild(span);
+      item.appendChild(btn);
+      toastWrap.appendChild(item);
+
+      // Inject keyframe once
+      if (!document.getElementById('sb-toast-kf')) {
+        var style = document.createElement('style');
+        style.id = 'sb-toast-kf';
+        style.textContent = '@keyframes toast-pop{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}' +
+          '.sb-toast-item{transition:opacity .4s ease,transform .4s ease}' +
+          '.sb-toast-item.hiding{opacity:0!important;transform:scale(0.93)!important}';
+        document.head.appendChild(style);
+      }
+
+      setTimeout(function () { dismissToast(item); }, 5000);
+    }
+
+    function dismissToast(item) {
+      item.classList.add('hiding');
+      setTimeout(function () { if (item.parentNode) item.parentNode.removeChild(item); }, 420);
+    }
+
+    var awardForms = document.querySelectorAll('form[data-award-form="true"]');
+
+    awardForms.forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var formData = new FormData(form);
+        fetch(form.action, {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        })
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error('Request failed');
+            }
+            return response.json();
+          })
+          .then(function (payload) {
+            if (payload.success) {
+              showFlash('success', payload.message);
+              var button = form.querySelector('button');
+              if (button) {
+                button.textContent = 'Awarded';
+                button.disabled = true;
+              }
+            } else {
+              showFlash('error', payload.message || 'Could not award stars.');
+            }
+          })
+          .catch(function () {
+            showFlash('error', 'Could not award stars right now. Please try again.');
+          });
+      });
+    });
+  })();
+</script>
+{% endblock %}
+

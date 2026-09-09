@@ -1,0 +1,11 @@
+Hi {{ user.display_name|default:user.email }},
+
+Welcome to {{ site_name }}!
+
+Please activate your account by visiting the link below:
+{{ activation_url }}
+
+If you did not create this account, you can ignore this email.
+
+— {{ site_name }}
+

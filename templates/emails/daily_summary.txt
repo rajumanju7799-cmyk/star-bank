@@ -1,0 +1,11 @@
+Hi {{ user.display_name|default:user.email }},
+
+Here is today's Little Starts Bank summary for {{ kid.name }}:
+- Today: {{ today_stars }} stars
+- This week: {{ weekly_total }} stars
+- Lifetime: {{ total_stars }} stars
+
+Keep up the amazing work!
+
+— {{ site_name }}
+

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Login · Little Starts Bank{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <div class="auth-card">
+    <section class="auth-hero">
+      <span class="hero-note">⭐ Safer family progress tracking</span>
+      <h1 class="page-title" style="margin-top: 1rem;">Welcome back to Little Starts Bank</h1>
+      <p class="muted">Sign in with your family email to unlock permanent progress, parent tools, and joyful kid dashboards.</p>
+      <div class="stack" style="margin-top: 1.5rem;">
+        <div class="card"><strong>Permanent storage</strong><br><span class="muted">All stars, kids, reports, and settings live in your database-backed account.</span></div>
+        <div class="card"><strong>Email activation</strong><br><span class="muted">Secure access with verification links sent from your configured Little Starts Bank sender.</span></div>
+        <div class="card"><strong>Production ready</strong><br><span class="muted">Django + PostgreSQL-ready settings, admin, and daily summary command.</span></div>
+      </div>
+    </section>
+    <section class="auth-form">
+      <h2 class="section-title">Login</h2>
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        {% for field in form %}
+          <label>{{ field.label }}{{ field }}</label>
+          {% for error in field.errors %}<div class="flash error">{{ error }}</div>{% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}<div class="flash error">{{ error }}</div>{% endfor %}
+        <button class="btn btn-primary" type="submit">Login</button>
+      </form>
+      <form method="post" action="{% url 'accounts:resend-activation' %}" class="form-grid" style="margin-top: 1rem;">
+        {% csrf_token %}
+        <label>Need a new activation email?
+          <input type="email" name="email" placeholder="family@example.com" required>
+        </label>
+        <button class="btn btn-outline" type="submit">Resend activation email</button>
+      </form>
+      <p class="muted" style="margin-top: 1rem;">New family? <a href="{% url 'accounts:register' %}" style="color: var(--primary-dark); font-weight: 700;">Create your account</a></p>
+    </section>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Baloo+2:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Baloo 2', sans-serif;
+  background: var(--app-bg, linear-gradient(135deg, #fff4bf 0%, #ffe082 60%, #ffcc80 100%));
+  color: #2c2c2c;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body[data-theme='sunny'] {
+  --app-bg: linear-gradient(135deg, #fff7cc 0%, #ffe89a 55%, #ffd180 100%);
+  --app-header: linear-gradient(90deg, #f59e0b 0%, #f97316 100%);
+}
+
+body[data-theme='sky'] {
+  --app-bg: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 55%, #c7d2fe 100%);
+  --app-header: linear-gradient(90deg, #0284c7 0%, #4f46e5 100%);
+}
+
+body[data-theme='forest'] {
+  --app-bg: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 55%, #d9f99d 100%);
+  --app-header: linear-gradient(90deg, #16a34a 0%, #059669 100%);
+}
+
+body[data-theme='candy'] {
+  --app-bg: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 55%, #f5d0fe 100%);
+  --app-header: linear-gradient(90deg, #db2777 0%, #9333ea 100%);
+}
+
+.app-bg {
+  background: var(--app-bg, linear-gradient(135deg, #fff4bf 0%, #ffe082 60%, #ffcc80 100%));
+}
+
+.app-header {
+  background: var(--app-header, linear-gradient(90deg, #f59e0b 0%, #f97316 100%));
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Star animation */
+@keyframes starPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.star-pulse {
+  animation: starPulse 0.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Bouncing animation */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.bounce-in {
+  animation: bounce 1s ease-in-out infinite;
+}
+
+/* Rotation for loading */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Card shadow */
+.card-shadow {
+  box-shadow: 0 10px 30px rgba(235, 107, 74, 0.15),
+              0 0 0 1px rgba(235, 107, 74, 0.1);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #eb6b4a 0%, #ff9f61 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Kid-friendly button styles */
+.btn-kid {
+  @apply px-6 py-4 rounded-full font-bold text-white transition-all duration-200 transform hover:scale-105 active:scale-95;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-kid:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Responsive grid */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+}
+
+/* Print styles for reports */
+@media print {
+  body {
+    background: white;
+  }
+
+  .no-print {
+    display: none;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection color */
+::selection {
+  background-color: #ff9f61;
+  color: white;
+}
+
+::-moz-selection {
+  background-color: #ff9f61;
+  color: white;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff9f61;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff8b42;
+}
+

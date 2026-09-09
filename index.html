@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/star-bank-logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#eb6b4a" />
+    <meta name="description" content="Little Starts Bank - Where little tasks become big rewards." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Little Starts Bank" />
+    <link rel="apple-touch-icon" href="/star-bank-logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Little Starts Bank - Reward Tracker</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js').catch(() => {
+            console.log('ServiceWorker registration failed');
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% block title %}Reports · Little Starts Bank{% endblock %}
+{% block content %}
+<div class="stack" style="padding: 1.5rem 0 2.5rem;">
+  <div class="panel panel-soft">
+    <div class="top-control-bar">
+      <form method="get" class="form-grid reports-filter-inline">
+        <input type="hidden" name="month" value="{{ report_month_value }}">
+        <input type="hidden" name="day" value="{{ report_selected_day_value }}">
+        <input type="hidden" name="tab" id="kid-select-tab-input" value="">
+        <label>Kid profile
+          <select name="kid" onchange="this.form.submit()">
+            {% for kid in kids %}
+              <option value="{{ kid.id }}" {% if kid.id == selected_kid.id %}selected{% endif %}>{{ kid.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </form>
+      <div class="nav-actions">
+        <a class="btn btn-outline" href="{% url 'starbank:parent-dashboard' %}?kid={{ selected_kid.id }}">Back to parent dashboard</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="stack">
+    <div class="hero-card kid-hero">
+      <h1 class="page-title">{{ selected_kid.name }}'s Star Adventure</h1>
+      <p class="muted">Switch between fun report views and explore progress from different angles.</p>
+      <div class="feature-chip-row">
+        <span class="feature-chip">🔥 {{ current_streak }} day streak</span>
+        <span class="feature-chip">⭐ {{ weekly_total }} stars this week</span>
+        <span class="feature-chip">🗓️ {{ monthly_total }} stars in {{ report_month_label }}</span>
+      </div>
+      <div class="stat-grid" style="margin-top:1rem;">
+        <div class="stat-card stat-card--sunny">
+          <div class="stat-label">Weekly average</div>
+          <div class="stat-value">{{ weekly_average }}</div>
+        </div>
+        <div class="stat-card stat-card--mint">
+          <div class="stat-label">Active days in month</div>
+          <div class="stat-value">{{ active_days_this_month }}</div>
+        </div>
+        <div class="stat-card stat-card--lavender">
+          <div class="stat-label">Best 14-day streak</div>
+          <div class="stat-value">{{ best_recent_streak }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-soft">
+      <div class="tab-strip" id="parent-report-tabs">
+        <button type="button" class="tab-btn is-active" data-report-tab="daily">Daily report</button>
+        <button type="button" class="tab-btn" data-report-tab="weekly">Weekly progress</button>
+        <button type="button" class="tab-btn" data-report-tab="monthly">Monthly overview</button>
+      </div>
+    </div>
+
+    <div class="tab-panel is-active" data-report-panel="daily">
+      <div class="panel panel-play">
+        <div class="row-between">
+          <h2 class="section-title">Last 14 days</h2>
+          <span class="badge badge-info">Most recent first</span>
+        </div>
+        <div class="report-list">
+          {% for entry in daily_entries %}
+            <div class="report-card">
+              <div class="row-between">
+                <strong>{% if entry.is_today %}Today{% else %}{{ entry.date|date:'D, M j' }}{% endif %}</strong>
+                <span class="badge">{{ entry.stars }} ⭐</span>
+              </div>
+              <div class="report-card-meta">
+                <span>{{ entry.mood_emoji }} {{ entry.mood_text }}</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ entry.progress }}%;"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-report-panel="weekly">
+      <div class="panel panel-soft">
+        <h2 class="section-title">Weekly progress</h2>
+        <div class="report-list">
+          {% for entry in weekly_entries %}
+            <div class="report-card">
+              <div class="row-between">
+                <strong>
+                  {% if entry.is_today %}
+                    Today ({{ entry.date|date:'D, M j' }})
+                  {% else %}
+                    {{ entry.date|date:'D, M j' }}
+                  {% endif %}
+                </strong>
+                <span class="badge badge-info">{{ entry.stars }} ⭐</span>
+              </div>
+              <div class="report-card-meta"><span>{{ entry.mood_emoji }} {{ entry.mood_text }}</span></div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ entry.progress }}%;"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if best_week_day %}
+          <div class="kid-callout" style="margin-top: 1rem;">
+            🏆 Best day this week: <strong>{{ best_week_day.date|date:'D, M j' }}</strong> with <strong>{{ best_week_day.stars }} ⭐</strong>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="tab-panel" data-report-panel="monthly">
+
+      {# ── Month nav ──────────────────────────────── #}
+      <div class="panel panel-soft">
+        <div class="month-overview-header">
+          <div>
+            <h2 class="section-title" style="margin-bottom:0;">🗓️ {{ report_month_label }}</h2>
+            <p class="muted" style="margin:0.2rem 0 0;">{{ active_days_this_month }} active day{% if active_days_this_month != 1 %}s{% endif %} · {{ monthly_total }} ⭐ total</p>
+          </div>
+          <div class="month-nav-form">
+            <a class="btn btn-outline"
+               href="?kid={{ selected_kid.id }}&month={{ report_prev_month_value }}&day={{ report_selected_day_value }}&tab=monthly">← Prev</a>
+            <form method="get" style="display:contents;">
+              <input type="hidden" name="kid" value="{{ selected_kid.id }}">
+              <input type="hidden" name="day" value="{{ report_selected_day_value }}">
+              <input type="hidden" name="tab" value="monthly">
+              <label class="sr-only" for="parent-report-month">Select month</label>
+              <input id="parent-report-month" type="month" name="month" value="{{ report_month_value }}">
+              <button class="btn btn-primary" type="submit">Go</button>
+            </form>
+            <a class="btn btn-outline"
+               href="?kid={{ selected_kid.id }}&month={{ report_next_month_value }}&day={{ report_selected_day_value }}&tab=monthly">Next →</a>
+          </div>
+        </div>
+
+        {# ── Mode toggle ── #}
+        <div class="tab-strip" id="parent-month-mode-tabs" style="margin-top:1rem; display:inline-flex;">
+          <button type="button" class="tab-btn is-active" data-parent-month-mode="calendar">📅 Calendar</button>
+          <button type="button" class="tab-btn" data-parent-month-mode="list">📋 List</button>
+        </div>
+      </div>
+
+      {# ── Calendar view ── #}
+      <div class="panel panel-play" id="parent-month-mode-calendar">
+        <div class="month-cal-grid">
+          <div class="month-cal-weekdays">
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+            <span>Sun</span>
+          </div>
+          <div class="month-cal-days">
+            {% for week in calendar_weeks %}
+              {% for entry in week %}
+                {% if entry %}
+                  <a class="month-cal-day {{ entry.tone_class }}{% if entry.is_selected %} month-cal-day--selected{% endif %}"
+                     href="?kid={{ selected_kid.id }}&month={{ report_month_value }}&day={{ entry.date|date:'Y-m-d' }}"
+                     title="{{ entry.date|date:'M j, Y' }} · {{ entry.stars }} stars">
+                    <span class="month-cal-day-num">{{ entry.day }}</span>
+                    <span class="month-cal-day-stars">{{ entry.stars }}⭐</span>
+                    <span class="month-cal-day-tasks">{{ entry.task_count }}✓</span>
+                  </a>
+                {% else %}
+                  <div class="month-cal-day month-cal-day--empty"></div>
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+        <div class="month-cal-legend">
+          <span class="month-legend-item month-cal-day--none">0 stars</span>
+          <span class="month-legend-item month-cal-day--low">1–3 ⭐</span>
+          <span class="month-legend-item month-cal-day--mid">4–6 ⭐</span>
+          <span class="month-legend-item month-cal-day--high">7+ ⭐</span>
+        </div>
+      </div>
+
+      {# ── List view ── #}
+      <div class="panel panel-soft" id="parent-month-mode-list" style="display:none;">
+        <div class="report-mini-list">
+          {% for entry in monthly_entries %}
+            <a class="report-mini-item"
+               href="?kid={{ selected_kid.id }}&month={{ report_month_value }}&day={{ entry.date|date:'Y-m-d' }}">
+              <strong style="min-width:9rem;">{{ entry.date|date:'D, M j' }}</strong>
+              <span class="muted">{{ entry.task_count }} task{% if entry.task_count != 1 %}s{% endif %}</span>
+              <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+                <span class="badge">{{ entry.stars }} ⭐</span>
+                {% if entry.deducted %}<span class="badge badge-danger">-{{ entry.deducted }}</span>{% endif %}
+              </div>
+            </a>
+          {% empty %}
+            <div class="report-mini-item"><span class="muted">No data yet for {{ report_month_label }}.</span></div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# ── Week bars + Compare ── #}
+      <div class="grid-2">
+        <div class="panel panel-soft">
+          <h3 class="section-title" style="font-size:1rem;">Week-by-week ⭐</h3>
+          <div class="report-mini-list" style="margin-top:0.5rem;">
+            {% for row in month_week_rows %}
+              <div class="report-mini-item report-mini-item--stack">
+                <div class="row-between">
+                  <strong>{{ row.label }}</strong>
+                  <span class="badge badge-info">{{ row.total }} ⭐</span>
+                </div>
+                <div class="tiny-bar">
+                  <div class="tiny-bar-fill" style="width:{{ row.progress }}%;"></div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="panel panel-soft">
+          <h3 class="section-title" style="font-size:1rem;">📊 Compare months</h3>
+          <div class="month-compare-row">
+            <div class="month-compare-col">
+              <div class="stat-label">{{ report_month_label }}</div>
+              <div class="stat-value" style="font-size:1.6rem;">{{ monthly_total }}</div>
+              <div class="muted" style="font-size:0.8rem;">stars</div>
+            </div>
+            <div class="month-compare-vs">vs</div>
+            <div class="month-compare-col">
+              <div class="stat-label">{{ previous_month_label }}</div>
+              <div class="stat-value" style="font-size:1.6rem;">{{ previous_month_total }}</div>
+              <div class="muted" style="font-size:0.8rem;">stars</div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:0.6rem;font-weight:700;">
+            {% if month_delta >= 0 %}
+              <span style="color:#15803d;font-size:1.05rem;">▲ +{{ month_delta }} ⭐ ({{ month_delta_percent }}%)</span>
+            {% else %}
+              <span style="color:#b91c1c;font-size:1.05rem;">▼ {{ month_delta }} ⭐ ({{ month_delta_percent }}%)</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# ── Best day callout ── #}
+      {% if best_month_day %}
+        <div class="kid-callout">
+          🌟 Best day in {{ report_month_label }}: <strong>{{ best_month_day.date|date:'M j' }}</strong> with <strong>{{ best_month_day.stars }} ⭐</strong>
+        </div>
+      {% endif %}
+
+      {# ── Selected day detail ── #}
+      <div class="panel panel-play">
+        <h3 class="section-title" style="margin-bottom:0.5rem;">
+          📍 {{ selected_day_summary.date|date:'l, M j, Y' }}
+        </h3>
+        <div class="month-day-chips">
+          <span class="month-day-chip month-day-chip--stars">⭐ {{ selected_day_summary.stars }} net stars</span>
+          <span class="month-day-chip month-day-chip--earned">➕ {{ selected_day_summary.earned }} earned</span>
+          {% if selected_day_summary.deducted %}
+            <span class="month-day-chip month-day-chip--deducted">➖ {{ selected_day_summary.deducted }} deducted</span>
+          {% endif %}
+          <span class="month-day-chip">✅ {{ selected_day_summary.task_count }} task{% if selected_day_summary.task_count != 1 %}s{% endif %}</span>
+        </div>
+
+        {% if selected_day_summary.stars %}
+          <div class="report-stars-row" style="margin-top:0.6rem;">
+            {% for _ in selected_day_star_icons %}<span style="font-size:1.3rem;">⭐</span>{% endfor %}
+            {% if selected_day_extra_stars %}<span class="badge badge-info">+{{ selected_day_extra_stars }} more</span>{% endif %}
+          </div>
+        {% endif %}
+
+        <div class="grid-2" style="margin-top:1rem;">
+          <div>
+            <h4 class="section-title" style="font-size:0.95rem;margin-bottom:0.4rem;">Completed tasks</h4>
+            <div class="report-mini-list">
+              {% for task in selected_day_tasks %}
+                <div class="report-mini-item"><strong>{{ task.name }}</strong><span class="badge">{{ task.stars }} ⭐</span></div>
+              {% empty %}
+                <div class="report-mini-item"><span class="muted">Click a day on the calendar to see details.</span></div>
+              {% endfor %}
+            </div>
+          </div>
+          <div>
+            <h4 class="section-title" style="font-size:0.95rem;margin-bottom:0.4rem;">Star adjustments</h4>
+            <div class="report-mini-list">
+              {% for adj in selected_day_adjustments %}
+                <div class="report-mini-item"><strong style="color:#b91c1c;">-{{ adj.stars }} ⭐</strong><span class="muted">{{ adj.reason }}</span></div>
+              {% empty %}
+                <div class="report-mini-item"><span class="muted">No deductions on this day.</span></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<script>
+  (function () {
+    // ── Top report tab switcher (daily / weekly / monthly)
+    var tabsRoot = document.getElementById('parent-report-tabs');
+    if (!tabsRoot) return;
+    var buttons = tabsRoot.querySelectorAll('[data-report-tab]');
+    var panels = document.querySelectorAll('[data-report-panel]');
+    var kidTabInput = document.getElementById('kid-select-tab-input');
+
+    function activate(tabName) {
+      buttons.forEach(function (btn) {
+        btn.classList.toggle('is-active', btn.getAttribute('data-report-tab') === tabName);
+      });
+      panels.forEach(function (panel) {
+        panel.classList.toggle('is-active', panel.getAttribute('data-report-panel') === tabName);
+      });
+      // Keep kid-selector form in sync so switching kid preserves the tab
+      if (kidTabInput) kidTabInput.value = tabName || '';
+    }
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activate(btn.getAttribute('data-report-tab'));
+      });
+    });
+
+    // Restore active tab from URL ?tab= parameter on page load
+    var urlTab = new URLSearchParams(window.location.search).get('tab');
+    activate(urlTab || 'daily');
+
+    // ── Calendar / List mode toggle inside monthly view
+    var monthModeTabsRoot = document.getElementById('parent-month-mode-tabs');
+    if (monthModeTabsRoot) {
+      var modeBtns = monthModeTabsRoot.querySelectorAll('[data-parent-month-mode]');
+      var calPanel = document.getElementById('parent-month-mode-calendar');
+      var listPanel = document.getElementById('parent-month-mode-list');
+
+      function activateMonthMode(mode) {
+        modeBtns.forEach(function (btn) {
+          btn.classList.toggle('is-active', btn.getAttribute('data-parent-month-mode') === mode);
+        });
+        if (calPanel)  calPanel.style.display  = (mode === 'calendar') ? '' : 'none';
+        if (listPanel) listPanel.style.display = (mode === 'list')     ? '' : 'none';
+      }
+
+      modeBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          activateMonthMode(btn.getAttribute('data-parent-month-mode'));
+        });
+      });
+    }
+  })();
+</script>
+{% endblock %}
+
